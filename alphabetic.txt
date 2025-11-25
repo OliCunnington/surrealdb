@@ -1,0 +1,21 @@
+{
+  floors: 9,
+  name: 'A Library'
+} > {
+  floors: 8,
+  name: 'Surreal Library'
+};
+
+TRUE
+
+===
+
+{
+  floors: 9,
+  a_name: 'A Library'
+} > {
+  floors: 8,
+  a_name: 'Surreal Library'
+};
+
+FALSE
