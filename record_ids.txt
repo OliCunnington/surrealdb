@@ -1,0 +1,186 @@
+
+-- CRUD
+
+CREATE user:martin CONTENT { name: "martin" };
+--  [
+-- 	    {
+-- 		    id: user:martin,
+-- 		    name: 'martin'
+-- 	    }
+--  ]
+CREATE user:ignacio CONTENT { name: "ignacio" };
+--  [
+--  	{
+--  		id: user:ignacio,
+--  		name: 'ignacio'
+--  	}
+--  ]
+CREATE user:tobie; user:jaime;
+--  [
+--  	{
+--  		id: user:tobie
+--  	}
+--  ]
+--------------- ??
+-- user:jaime
+--------------- ??
+
+SELECT * FROM user;
+--  [
+--  	{
+--  		id: user:ignacio,
+--  		name: 'ignacio'
+--  	},
+--  	{
+--  		id: user:martin,
+--  		name: 'martin'
+--  	},
+--  	{
+--  		id: user:tobie
+--  	}
+--  ]
+------------ no jaime??
+
+UPDATE user:martin SET lastname = "schaer";
+--  [
+--  	{
+--  		id: user:martin,
+--  		lastname: 'schaer',
+--  		name: 'martin'
+--  	}
+--  ]
+
+DELETE user:foo;
+--  []
+
+-- ------------------------------------------------------------
+-- Relations through record links (simple, no metadata)
+-- Create teams
+
+CREATE team:green SET name = "Green";
+--  [
+--  	{
+--  		id: team:green,
+--  		name: 'Green'
+--  	}
+--  ]
+CREATE team:red SET name = "Red";
+--  [
+--  	{
+--  		id: team:red,
+--  		name: 'Red'
+--  	}
+--  ]
+UPDATE user:martin SET team = team:green;
+--  [
+--  	{
+--  		id: user:martin,
+--  		lastname: 'schaer',
+--  		name: 'martin',
+--  		team: team:green
+--  	}
+--  ]
+
+SELECT id, name, team.name FROM user;
+--  [
+--  	{
+--  		id: user:ignacio,
+--  		name: 'ignacio',
+--  		team: {
+--  			name: NONE
+--  		}
+--  	},
+--  	{
+--  		id: user:martin,
+--  		name: 'martin',
+--  		team: {
+--  			name: 'Green'
+--  		}
+--  	},
+--  	{
+--  		id: user:tobie,
+--  		name: NONE,
+--  		team: {
+--  			name: NONE
+--  		}
+--  	}
+--  ]
+
+-- Show all properties inside team
+SELECT id, name, team.* FROM user;
+--  [
+--  	{
+--  		id: user:ignacio,
+--  		name: 'ignacio',
+--  		team: NONE
+--  	},
+--  	{
+--  		id: user:martin,
+--  		name: 'martin',
+--  		team: {
+--  			id: team:green,
+--  			name: 'Green'
+--  		}
+--  	},
+--  	{
+--  		id: user:tobie,
+--  		name: NONE,
+--  		team: NONE
+--  	}
+--  ]
+
+-- ------------------------------------------------------------
+-- Relations through graph edges (can containe metadata)
+
+RELATE user:martin->plays_for->team:green SET since = d'2025-10-23';
+--  [
+--  	{
+--  		id: plays_for:o2f2j5x60jayy6es6tx0,
+--  		in: user:martin,
+--  		out: team:green,
+--  		since: d'2025-10-23T00:00:00Z'
+--  	}
+--  ]
+
+RELATE user:ignacio->plays_for->team:green;
+--  [
+--  	{
+--  		id: plays_for:6xi3tr7hc5ghlwp973yv,
+--  		in: user:ignacio,
+--  		out: team:green
+--  	}
+--  ]
+
+RELATE user:tobie->plays_for->team:red;
+--  [
+--  	{
+--  		id: plays_for:x21gar6zfelcxt8b3jj5,
+--  		in: user:tobie,
+--  		out: team:red
+--  	}
+--  ]
+
+SELECT *, ->plays_for->team as team FROM user;
+--  [
+--  	{
+--  		id: user:ignacio,
+--  		name: 'ignacio',
+--  		team: [
+--  			team:green
+--  		]
+--  	},
+--  	{
+--  		id: user:martin,
+--  		lastname: 'schaer',
+--  		name: 'martin',
+--  		team: [
+--  			team:green
+--  		]
+--  	},
+--  	{
+--  		id: user:tobie,
+--  		team: [
+--  			team:red
+--  		]
+--  	}
+--  ]
