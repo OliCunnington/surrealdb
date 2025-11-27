@@ -1,0 +1,90 @@
+<decimal>1000.00000000000001;
+-- 1000dec
+
+1000.00000000000001dec;
+-- 1000.00000000000001dec
+
+-- Works
+<datetime>'1859-11-26';
+-- Returns an error
+<datetime>'EIGHTEEN FIFTY NINE, NOVEMBER TWENTY SIX';
+-- Works
+d'1859-11-26';
+-- Query won't even run
+d'EIGHTEEN FIFTY NINE, NOVEMBER TWENTY SIX';
+
+
+UPDATE can be used to change fields and add new ones...
+settings a field value to an id (place:surreal_library) creates a link
+
+
+LET
+-- Easy to read: this will be IDs of towns with the name Riverdale
+LET $riverdale = SELECT VALUE id FROM town WHERE name = "Riverdale";
+
+-- IDs of libraries with the name Riverdale in the address
+LET $libraries = SELECT VALUE id FROM place WHERE "Riverdale" IN address;
+
+-- Then update one with the other
+UPDATE $riverdale SET libraries = $libraries;
+
+-- Parameter is still around for reuse
+-- If we had any cats we could link them to the libraries too
+UPDATE cat SET libraries = $libraries;
+
+SELECT *, libraries.name FROM town;
+
+--  [
+--    {
+--      id: town:riverdale,
+--      libraries: [
+--        {
+--          name: [
+--            'Surreal Library'
+--          ]
+--        }
+--      ],
+--      name: 'Riverdale',
+--      population: 75000
+--    }
+--  ]
+
+SELECT 
+    *, 
+    libraries.{ name, floors }
+FROM town;
+
+--  [
+--    {
+--      id: town:riverdale,
+--      libraries: [
+--        {
+--          floors: 8,
+--          name: 'Surreal Library'
+--        }
+--      ],
+--      name: 'Riverdale',
+--      population: 75000
+--    }
+--  ]
+
+
+-- use FETCH to display all the fields of a linked record
+SELECT * FROM town FETCH libraries;
+
+--  [
+--    {
+--      id: town:riverdale,
+--      libraries: [
+--        {
+--          address: '2025 Statement Street, Riverdale',
+--          floors: 8,
+--          id: place:surreal_library,
+--          name: 'Surreal Library',
+--          place_type: 'library'
+--        }
+--      ],
+--      name: 'Riverdale',
+--      population: 75000
+--    }
+--  ]
