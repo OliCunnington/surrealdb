@@ -14,8 +14,10 @@ d'1859-11-26';
 d'EIGHTEEN FIFTY NINE, NOVEMBER TWENTY SIX';
 
 
-UPDATE can be used to change fields and add new ones...
-settings a field value to an id (place:surreal_library) creates a link
+UPDATE can be used to change fields (and add new ones... if SHEMALESS)
+
+settings a field value to an id (SET whatever = place:surreal_library) creates a link
+    can be list etc...
 
 
 LET
@@ -88,3 +90,67 @@ SELECT * FROM town FETCH libraries;
 --      population: 75000
 --    }
 --  ]
+
+ -- SHEMAFULL
+ DEFINE TABLE schemafull_town SCHEMAFULL;
+-- schemafull_town only has one defined field
+DEFINE FIELD population ON schemafull_town TYPE number;
+
+-- So the query succeeds, but 'name' data is ignored
+CREATE schemafull_town SET name = "Riverdale", population = 75000;
+
+-- SHEMALESS table can use define to restrict types for fields
+-- Statements for the 'place' table
+DEFINE FIELD address ON place TYPE string;
+DEFINE FIELD name ON place TYPE string;
+
+-- Statements for the 'town' table
+DEFINE FIELD name ON town TYPE string;
+DEFINE FIELD population ON town TYPE int;
+DEFINE FIELD libraries ON town TYPE option<array<record<place>>>;
+
+-- Records are always of type record<record_name>
+-- array<...> able to hold more than one
+-- option<...> allows for empty field / record creation without populated field
+
+-- defines allowed values for a field
+DEFINE FIELD place_type
+    ON place
+    TYPE "building" | "tower" | "store" | "school" | "park" | "library";
+
+-- does the same thing
+DEFINE FIELD place_type
+    ON town
+    TYPE string
+    ASSERT $value IN ["building", "tower", "store", "school", "park", "library"];
+
+-- dissalows negative population
+DEFINE FIELD OVERWRITE population ON town TYPE int ASSERT $value >= 0;
+-- use the OVERWRITE clause to rewrite the definition
+
+--works fine, but returns NONE
+LET $name = town:riverdale.naame;
+--catches type mis-match
+LET $name: string = town:riverdale.naame;
+--  'Found NONE for param $name, but expected a string'
+
+
+-- type restriction can be used in assignment
+LET $type: "building" | "school" | "park" = place:surreal_library.place_type;
+--  "Found 'library' for param $type, but expected a 'building' | 'school' | 'park'"
+
+
+-- literal types can use combinations -> ENUMS and TAGGED UNIONS (?!)
+LET $result: 
+    "Good"
+    | { error_type: "Bad gateway" | "Unauthorized", message: string } 
+= { error_type: "Unauthorized", message: "Can't be accessed at this time" };
+
+RETURN $result;
+
+--  {
+--    error_type: 'Unauthorized',
+--    message: "Can't be accessed at this time"
+--  }
+
+
