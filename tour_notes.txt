@@ -154,3 +154,161 @@ RETURN $result;
 --  }
 
 
+INSERT INTO table_name [
+    {
+        JSON ACCEPTED HERE
+    }
+]
+
+INSERT INTO person [
+    {
+        "name": "Sara Bellum",
+        "age": 30        
+    }
+]
+--  [
+--    {
+--      age: 30,
+--      id: person:jbcyzmur1jalageanc1u,
+--      name: 'Sara Bellum'
+--    }
+--  ]
+
+
+--- FOR LOOPS
+
+FOR $person IN [
+  {
+    age: 30,
+    name: 'Sara Bellum'
+  },
+  {
+    age: 25,
+    name: 'Lydia Wyndham'
+  },
+  {
+    age: 45,
+    name: 'Samm Schwartz'
+  }
+] {
+    CREATE person SET
+        age = $person.age,
+        name = $person.name
+};
+
+SELECT * FROM person;
+
+
+--  [
+--    {
+--      age: 45,
+--      id: person:cj8wc617o1ea2vs1yv4n,
+--      name: 'Samm Schwartz'
+--    },
+--    {
+--      age: 30,
+--      id: person:e8z6pjqhuwzfalbku61n,
+--      name: 'Sara Bellum'
+--    },
+--    {
+--      age: 25,
+--      id: person:faovorn8ntkqwfw01638,
+--      name: 'Lydia Wyndham'
+--    }
+--  ]
+
+
+-- GRAPH RELATIONS
+
+UPDATE town:riverdale SET libraries = [place:surreal_library];
+-- creates link, does not allow for meta data
+
+-- table -> meta_data -> table_two
+-- table <- meta_data <- table_two
+
+-- Create writer->wrote->blog path
+RELATE writer:one->wrote->blog:one;
+--  [
+--    {
+--      id: wrote:7l04nq3umzufbemaldlz,
+--      in: writer:one,
+--      out: blog:one
+--    }
+--  ]
+
+-- Create reader->likes->magazine path
+RELATE reader:one->likes->magazine:one
+    SET stars_out_of_ten = 7.5; -- and give it a field too if we want
+--  [
+--    {
+--      id: likes:jd17lotl4nnyf06jl2ng,
+--      in: reader:one,
+--      out: magazine:one,
+--      stars_out_of_ten: 7.5f
+--    }
+--  ]
+
+--inside FOR loop 
+FOR $person IN [
+  {
+    age: 30,
+    name: 'Sara Bellum'
+  },
+  {
+    age: 25,
+    name: 'Lydia Wyndham'
+  },
+  {
+    age: 45,
+    name: 'Samm Schwartz'
+  }
+] {
+    LET $created = CREATE ONLY person SET
+        age = $person.age,
+        name = $person.name;
+    RELATE $created->works_at->place:surreal_library;
+};
+
+SELECT * FROM works_at;
+--  [
+--    {
+--      id: works_at:3o8n3jmqx1uok41rjxq7,
+--      in: person:g94fc1nqsraaatplddyh,
+--      out: place:surreal_library
+--    },
+--    {
+--      id: works_at:f3ghd88elmvs1jwfhpoc,
+--      in: person:qpk3htqruhvd469pox0r,
+--      out: place:surreal_library
+--    },
+--    {
+--      id: works_at:j2yf2jdnmponak0v3q0q,
+--      in: person:6kittp2n5lwpjzgu29jt,
+--      out: place:surreal_library
+--    }
+--  ]
+
+SELECT in.* FROM works_at;
+--  [
+--    {
+--      in: {
+--        age: 45,
+--        id: person:f0z8cabmok8m9xn00lfu,
+--        name: 'Samm Schwartz'
+--      }
+--    },
+--    {
+--      in: {
+--        age: 30,
+--        id: person:zfdzeawmuqh2mm498edj,
+--        name: 'Sara Bellum'
+--      }
+--    },
+--    {
+--      in: {
+--        age: 25,
+--        id: person:ocp2l14l4nbgo60mnhgt,
+--        name: 'Lydia Wyndham'
+--      }
+--    }
+--  ]
