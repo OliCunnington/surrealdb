@@ -312,3 +312,114 @@ SELECT in.* FROM works_at;
 --      }
 --    }
 --  ]
+
+-- using graph query directly on a record
+-- Get Samm's record ID
+LET $samm = SELECT id FROM ONLY person WHERE name = 'Samm Schwartz' LIMIT 1;
+
+-- Then just query from the record ID, no SELECT
+$samm->works_at->place.{ address, floors, name };
+--  [
+--    {
+--      address: '2025 Statement Street, Riverdale',
+--      floors: 8,
+--      name: 'Surreal Library'
+--    }
+--  ]
+
+-- bidirectional relations
+place:surreal_library<-works_at<-person.name;
+--  [
+--    'Samm Schwartz',
+--    'Sara Bellum',
+--    'Lydia Wyndham'
+--  ]
+
+-- multi-level relations
+CREATE hero:wolverine, hero:jean_grey, hero:cyclops;
+RELATE hero:wolverine->likes->hero:jean_grey;
+RELATE hero:jean_grey->likes->hero:cyclops;
+
+-- returns Jean Grey, whom Wolverine likes
+hero:wolverine->likes->hero;
+-- returns Cyclops, whom the person that Wolverine likes likes
+hero:wolverine->likes->hero->likes->hero;
+
+--valid 
+person->works_at->place<-works_at<-person
+
+-- querry with list of related (team_members) persons
+SELECT 
+    name, 
+    ->works_at->place
+    <-works_at<-person.name 
+    AS team_members
+FROM person;
+--  [
+--    {
+--      name: 'Sara Bellum',
+--      team_members: [
+--        'Samm Schwartz',
+--        'Sara Bellum',
+--        'Lydia Wyndham'
+--      ]
+--    },
+--    {
+--      name: 'Lydia Wyndham',
+--      team_members: [
+--        'Samm Schwartz',
+--        'Sara Bellum',
+--        'Lydia Wyndham'
+--      ]
+--    },
+--    {
+--      name: 'Samm Schwartz',
+--      team_members: [
+--        'Samm Schwartz',
+--        'Sara Bellum',
+--        'Lydia Wyndham'
+--      ]
+--    }
+--  ]
+
+-- array::complement() example
+SELECT 
+    name, 
+  -- The function takes two arrays, so put 'name' inside an array
+    array::complement(->works_at->place<-works_at<-person.name, [name])
+    AS team_members
+FROM person;
+--  [
+--    {
+--      name: 'Lydia Wyndham',
+--      team_members: [
+--        'Sara Bellum',
+--        'Samm Schwartz'
+--      ]
+--    },
+--    {
+--      name: 'Sara Bellum',
+--      team_members: [
+--        'Lydia Wyndham',
+--        'Samm Schwartz'
+--      ]
+--    },
+--    {
+--      name: 'Samm Schwartz',
+--      team_members: [
+--        'Lydia Wyndham',
+--        'Sara Bellum'
+--      ]
+--    }
+--  ]
+
+array::complement(
+    ["He", "is", "almost", "always", "on", "time"],
+    ["always", "almost"]
+);
+--  [
+--    'He',
+--    'is',
+--    'on',
+--    'time'
+--  ]
