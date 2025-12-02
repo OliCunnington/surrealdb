@@ -423,3 +423,69 @@ array::complement(
 --    'on',
 --    'time'
 --  ]
+
+-- array::completent with a customer->purchased->product<-purchased<-customer would give basic recomendations ?
+
+
+-- automatically generated field on account/record creation recording time, readonly
+DEFINE FIELD account_created ON TABLE customer_of VALUE time::now() READONLY;
+
+-- field for last update (not read only but populated on creation) 
+DEFINE FIELD last_updated ON TABLE customer_of VALUE time::now();
+
+-- calculated field
+DEFINE FIELD customer_for
+  ON TABLE customer_of
+  VALUE <future> { time::now() - account_created };
+
+
+
+FOR $data IN [
+  { age: 15, name: 'Archie Andrews'   },
+  { age: 15, name: 'Veronica Lodge'   },
+  { age: 15, name: 'Betty Cooper'     },
+  { age: 15, name: 'Jughead Jones'    },
+  { age: 15, name: 'Reggie Mantle'    },
+  { age: 50, name: 'Hiram P. Lodge'   },
+    { age: 55, name: 'Geraldine Grundy' },
+  { age: 65, name: 'Waldo Weatherbee' }
+] {
+    LET $person = CREATE ONLY person SET
+        name = $data.name,
+        age = $data.age;
+    RELATE $person->customer_of->place:surreal_library;
+};
+
+SELECT 
+  out.name AS customer_of,
+  account_created,
+  customer_for,
+  last_updated
+FROM customer_of LIMIT 1;
+
+--  [
+--    {
+--      account_created: d'2025-03-19T05:26:14.912Z',
+--      customer_for: 1ms,
+--      customer_of: 'Surreal Library',
+--      last_updated: d'2025-03-19T05:26:14.912Z'
+--    }
+--  ]
+
+SLEEP 1s;
+
+SELECT 
+  out.name AS customer_of,
+  account_created,
+  customer_for,
+  last_updated
+FROM customer_of LIMIT 1;
+
+--  [
+--    {
+--      account_created: d'2025-03-19T05:26:14.912Z',
+--      customer_for: 1s3ms,
+--      customer_of: 'Surreal Library',
+--      last_updated: d'2025-03-19T05:26:14.912Z'
+--    }
+--  ]
