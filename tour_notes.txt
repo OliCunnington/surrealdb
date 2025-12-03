@@ -489,3 +489,227 @@ FROM customer_of LIMIT 1;
 --      last_updated: d'2025-03-19T05:26:14.912Z'
 --    }
 --  ]
+
+
+FOR $data IN 
+[
+  {
+    author: 'Charles Dickens',
+    english_title: 'A Tale of Two Cities',
+    language: 'en',
+    published: "1859-11-26",
+    title: 'A Tale of Two Cities'
+  },
+    {
+        author: "Antoine de Saint-Exupéry",
+        english_title: "The Little Prince",
+        language: "fr",
+        published: "1943-04-15",
+        title: "Le Petit Prince"
+    },
+  {
+    author: 'Paulo Coelho',
+    english_title: 'The Alchemist',
+    language: 'pt',
+    published: "1988-03-01",
+    title: 'O Alquimista'
+  },
+  {
+    author: 'J.K. Rowling',
+    english_title: "Harry Potter and the Philosopher's Stone",
+    language: 'en',
+    published: "1997-06-26",
+    title: "Harry Potter and the Philosopher's Stone"
+  },
+  {
+    author: 'Agatha Christie',
+    english_title: 'And Then There Were None',
+    language: 'en',
+    published: "1939-11-06",
+    title: 'And Then There Were None'
+  },
+  {
+    author: 'Cao Xueqin',
+    english_title: 'Dream of the Red Chamber',
+    language: 'zh',
+    published: "1791-03-01",
+    title: '紅樓夢'
+  },
+  {
+    author: 'J.R.R. Tolkien',
+    english_title: 'The Hobbit',
+    language: 'en',
+    published: "1937-09-21",
+    title: 'The Hobbit'
+  },
+  {
+    author: 'Lewis Carroll',
+    english_title: "Alice's Adventures in Wonderland",
+    language: 'en',
+    published: "1865-07-04",
+    title: "Alice's Adventures in Wonderland"
+  }
+] {
+    -- Create the author for each book, return just the object
+    LET $author = CREATE ONLY person SET
+      name = $data.author;
+
+    -- Create the book, cast 'published' field from string to datetime
+    LET $book = CREATE ONLY book SET
+        author = $data.author,
+        english_title = $data.english_title,
+        language = $data.language,
+        published = <datetime>$data.published,
+        title = $data.title;
+
+    -- Connect the author to the book
+    RELATE $author->wrote->$book;
+    -- Give the book to the library
+    RELATE place:surreal_library->has->$book;
+};
+
+SELECT 
+  name AS author, 
+  ->wrote->book.title AS books
+FROM person
+  WHERE ->wrote->book
+  LIMIT 3;
+
+--  [
+--    {
+--      author: 'J.R.R. Tolkien',
+--      books: [
+--        'The Hobbit'
+--      ]
+--    },
+--    {
+--      author: 'Agatha Christie',
+--      books: [
+--        'And Then There Were None'
+--      ]
+--    },
+--    {
+--      author: 'Lewis Carroll',
+--      books: [
+--        "Alice's Adventures in Wonderland"
+--      ]
+--    }
+--  ]
+
+SELECT 
+  name, 
+  ->has.out.title AS books
+FROM place;
+
+--  [
+--    {
+--      books: [
+--        'The Hobbit',
+--        'And Then There Were None',
+--        'A Tale of Two Cities',
+--        "Harry Potter and the Philosopher's Stone",
+--        'Le Petit Prince',
+--        "Alice's Adventures in Wonderland",
+--        '紅樓夢',
+--        'O Alquimista'
+--      ],
+--      name: 'Surreal Library'
+--    }
+--  ]
+
+-- EVENTS
+DEFINE EVENT event_name ON table_name [ WHEN some_expression ] THEN {
+   // Write what you want to happen here
+};
+
+-- access to the type of event [“CREATE”, “UPDATE”, “DELETE”] through $event parameter
+-- also $before and $after
+
+-- set english_title to be title if language is 'en' or throw error if language not 'en' and english_title not populated
+DEFINE EVENT language_check ON book WHEN $event = "CREATE" THEN {
+    IF $after.language = 'en' {
+        UPDATE $after SET english_title = $after.title;
+    } ELSE IF $after.language != 'en' AND $after.english_title IS NONE {
+        THROW "Please enter an English title for " 
+            + <string>$after.title + 
+            " written in "
+            + <string>$after.language;
+    }
+};
+
+CREATE book SET title = "The Shadow Rising", author = "Robert Jordan", language = 'en';
+--  [
+--    {
+--      author: 'Robert Jordan',
+--      id: book:w8e6dv2db255h27ezrip,
+--      language: 'en',
+--      title: 'The Shadow Rising'
+--    }
+--  ]
+
+SELECT * FROM book WHERE title = "The Shadow Rising";
+--  [
+--    {
+--      author: 'Robert Jordan',
+--      english_title: 'The Shadow Rising',
+--      id: book:w8e6dv2db255h27ezrip,
+--      language: 'en',
+--      title: 'The Shadow Rising'
+--    }
+--  ]
+
+-- this will fail
+CREATE book SET
+    title = "La Détresse et l'enchantement",
+    author = "Gabrielle Roy",
+    language = 'fr';
+--  "An error occurred: Please enter an English title 
+--  for La Détresse et l'enchantement written in fr"
+
+SELECT * FROM book WHERE title = "La Détresse et l'enchantement";
+--  []
+
+
+-- INDEXES
+
+CREATE person SET name = "Billy";
+-- Create 25000 more records, each with a random string for a name
+CREATE |person:25000| SET name = rand::string(10) RETURN NONE;
+
+-- Lots of 'person' records to look through...
+SELECT * FROM person WHERE name = "Billy";
+
+-- Add an index
+DEFINE INDEX name_index ON person FIELDS name;
+-- The same query is much faster now
+SELECT * FROM person WHERE name = "Billy";
+
+
+-- INDEXES can be used to ensure uniqueness
+DEFINE INDEX unique_address ON TABLE place FIELDS address UNIQUE;
+CREATE place SET
+    name = "Wrong house",
+    address = "2025 Statement Street, Riverdale",
+    place_type = "building";
+--  "Database index `unique_address` already contains
+--  '2025 Statement Street, Riverdale', with record `place:surreal_library`"
+
+-- can be used on relations/graph edges too
+DEFINE INDEX can_only_like_once ON TABLE likes FIELDS in, out UNIQUE;
+RELATE person:one->likes->person:two;
+RELATE person:one->likes->person:two;
+--  'Database index `can_only_like_once` already contains
+--  [person:one, person:two], with record `likes:6lx7cqzesfh9jkic60c2`'
+
+-- SCHEMA improvements
+-- from -> to image on https://surrealdb.com/learn/tour/page-26
+DEFINE TABLE OVERWRITE works_at TYPE RELATION IN person OUT place;
+DEFINE TABLE OVERWRITE wrote TYPE RELATION IN person OUT book;
+DEFINE TABLE OVERWRITE has TYPE RELATION IN place OUT book;
+DEFINE TABLE OVERWRITE customer_of TYPE RELATION IN person OUT place;
+
+-- DEFINE TABLE
+--  TYPE RELATION                   -- to ensure that it can only be used as a graph table
+--  IN record_name OUT record_name  -- to set the record types that can be used
+--  OVERWRITE                       -- after DEFINE TABLE since current tables are schemaless, non-relation tables
+                                    -- without this, database will throw 'already exists' error
