@@ -424,7 +424,7 @@ array::complement(
 --    'time'
 --  ]
 
--- array::completent with a customer->purchased->product<-purchased<-customer would give basic recomendations ?
+-- array::complement with a customer->purchased->product<-purchased<-customer would give basic recomendations ?
 
 
 -- automatically generated field on account/record creation recording time, readonly
@@ -713,3 +713,156 @@ DEFINE TABLE OVERWRITE customer_of TYPE RELATION IN person OUT place;
 --  IN record_name OUT record_name  -- to set the record types that can be used
 --  OVERWRITE                       -- after DEFINE TABLE since current tables are schemaless, non-relation tables
                                     -- without this, database will throw 'already exists' error
+
+
+-- RECURSIVE NOTATION
+-- for exploring graph relations
+
+--reference querry
+place:event_junction.connected_to;
+--  [
+--    street:index_avenue,
+--    street:rust_row
+--  ]
+
+-- the same, but first result returns seperate array element for each result from first step
+place:event_junction.connected_to.connected_to;
+--  [
+--    [
+--      place:event_junction,
+--      place:surreal_square,
+--      place:surrealdb_university,
+--      street:bowler_hat_alley,
+--      street:record_link_way,
+--      street:rust_row,
+--      street:statement_street
+--    ],
+--    [
+--      place:idiom_tower,
+--      place:transaction_trail,
+--      street:bowler_hat_alley,
+--      street:index_avenue,
+--      street:schema_boulevard
+--    ]
+--  ]
+
+-- returns single element array with all possible 
+-- {search_depth}
+place:event_junction.{2}.connected_to;
+--  [
+--    place:event_junction,
+--    place:surreal_square,
+--    place:surrealdb_university,
+--    street:bowler_hat_alley,
+--    street:record_link_way,
+--    street:rust_row,
+--    street:statement_street,
+--    place:idiom_tower,
+--    place:transaction_trail,
+--    street:bowler_hat_alley,
+--    street:index_avenue,
+--    street:schema_boulevard
+--  ]
+
+-- {search_depth} can take range {..6}
+-- {n+path} to show all the paths walked
+-- {n+collect} to collect all the unique records walked along the path
+-- {n+shortest+some_record_id} to show the shortest path to get to a certain record
+
+place:idiom_tower.{3+path}.connected_to;
+-- snippet
+--  [
+--    [
+--      street:bowler_hat_alley,
+--      street:index_avenue,
+--      place:event_junction
+--    ],
+--    [
+--      street:bowler_hat_alley,
+--      street:index_avenue,
+--      place:surreal_square
+--    ]
+--  ]
+
+-- all visitable places in 3 steps
+place:idiom_tower.{3+collect}.connected_to;
+--  [
+--    street:bowler_hat_alley,
+--    street:rust_row,
+--    street:schema_boulevard,
+--    street:index_avenue,
+--    place:idiom_tower,
+--    place:transaction_trail,
+--    place:access_court,
+--    street:recursive_crossing,
+--    place:event_junction,
+--    place:surreal_square,
+--    place:surrealdb_university,
+--    street:record_link_way,
+--    street:statement_street
+--  ]
+
+-- +shortest requires id for destination and range for max search depth
+place:idiom_tower.{..6+shortest=street:push_to_main_street}.connected_to;
+--  [
+--    street:bowler_hat_alley,
+--    street:index_avenue,
+--    street:record_link_way,
+--    street:push_to_main_street
+--  ]
+
+-- same querry, include original record with +inclusive
+-- and .. for open range
+place:idiom_tower.{..+shortest=street:push_to_main_street+inclusive}.connected_to;
+--  [
+--    place:idiom_tower,
+--    street:bowler_hat_alley,
+--    street:index_avenue,
+--    street:record_link_way,
+--    street:push_to_main_street
+--  ]
+
+-- notation
+place:idiom_tower.{2+collect}.connected_to;
+-- as querry
+-- @. means "starting from whichever record ID this happens to be"
+SELECT @.{2+collect}.connected_to FROM place:idiom_tower;
+-- [
+--   {
+--     connected_to: [
+--       street:bowler_hat_alley,
+--       street:rust_row,
+--       street:schema_boulevard,
+--       street:index_avenue,
+--       place:idiom_tower,
+--       place:transaction_trail,
+--       place:access_court,
+--       street:recursive_crossing
+--     ]
+--   }
+--  ]
+
+-- Both of these have the same output
+place:idiom_tower.{2+collect}.connected_to;
+SELECT VALUE @.{2+collect}.connected_to FROM ONLY place:idiom_tower;
+
+place:idiom_tower.{ id, name };
+-- Same output using SELECT:
+-- SELECT @.{ id, name } FROM ONLY place:idiom_tower;
+
+place:idiom_tower.{ id, name, connected_to };
+-- Same output using SELECT:
+-- SELECT @.{ id, name, connected_to } FROM ONLY place:idiom_tower;
+
+place:idiom_tower.{3}.{ id, name, next: connected_to.@ };
+--  Same output using SELECT:
+--    SELECT @.{3}.{ id, name, next: connected_to.@ } FROM ONLY place:idiom_tower;
+--  output is a single object that goes down three levels, showing the id, name, and next paths
+
+-- maximum level of depth for recursive queries (256)
+-- querry above will hit this if given {..} (open_range)
+
+-- TIMEOUT can be used if unsure of depth (with SELECT)
+SELECT @.{..}.{ id, name, connected_to: connected_to.@ }
+  FROM ONLY place:idiom_tower
+  TIMEOUT 1s;
