@@ -130,7 +130,7 @@ SELECT id, name, team.* FROM user;
 --  ]
 
 -- ------------------------------------------------------------
--- Relations through graph edges (can containe metadata)
+-- Relations through graph edges (can contain metadata)
 
 RELATE user:martin->plays_for->team:green SET since = d'2025-10-23';
 --  [
@@ -184,3 +184,13 @@ SELECT *, ->plays_for->team as team FROM user;
 --  		]
 --  	}
 --  ]
+
+--------------------------------------
+-- functions
+DEFINE FUNCTION fn::increment($name: string) {
+    RETURN (UPSERT ONLY type::thing('counter', $name)
+    SET value += 1).value;
+};
+
+LET $increment = fn::increment('test');
+CREATE test SET id = $increment;
