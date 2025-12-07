@@ -1,0 +1,128 @@
+-- same result
+
+-- two TRANSACTIONS
+CREATE person;
+CREATE product;
+
+-- single TRANSACTION
+CREATE person, product PARALLEL;
+
+
+-- TIMEOUT used to limit TRANSACTION time, used to tighly control compute cost
+CREATE person TIMEOUT 2ms;
+CREATE product TIMEOUT 2ms;
+
+CREATE person, product TIMEOUT 3ms PARALLEL;
+
+-- CONTENT clause - JSON like
+CREATE product CONTENT {
+    name: 'Cruiser Hoodie',
+    details: [ "Medium fit", "Set-in sleeve"],
+    colours: ['Dark Heather Grey','Bubble Gum Pink'],
+    sizes: [ "xs", "s", "m", "l", "xl"],
+    price: 59,
+    images: [
+      {
+          url: "https://surrealdb.store/cdn/shop/files/cruiser-hoodie-bubble-gum-pink-white-m-1_65f13f38-058c-4e29-b2fa-aad068da75e0.jpg",
+          position: 1
+      },
+      {
+          url: "https://surrealdb.store/cdn/shop/files/cruiser-hoodie-dark-heather-grey-pink-icon-m-1.jpg?v=1690812164",
+          position: 2
+      }
+    ],
+    time: {
+        created_at: time::now(),
+        updated_at: time::now()
+    }
+};
+
+-- SET clause
+CREATE product SET
+name = 'Cruiser Hoodie',
+colours = ['Dark Heather Grey','Bubble Gum Pink'],
+price = 59,
+time = {
+    created_at: time::now(),
+    updated_at: time::now()
+};
+
+-- SET with . notation
+CREATE product SET
+name = 'Cruiser Hoodie',
+time.created_at = time::now(),
+time.updated_at = time::now();
+
+-- PIPE - loop for creating 100 records
+CREATE |product:100| CONTENT {
+    name: rand::enum('Cruiser Hoodie', 'Surreal T-Shirt'),
+    colours: [rand::string(10), rand::string(10),],
+    price: rand::int(20, 60),
+    time: {
+        created_at: rand::time(1611847404, 1706455404),
+        updated_at: rand::time(1651155804, 1716906204)
+    }
+};
+
+-- INSERT
+--  creates table if it does not already exist (if not running in strict mode)
+
+-- tuple notation
+INSERT INTO product (name, colours, price, time)
+VALUES (
+    'Cruiser Hoodie',
+    ['Dark Heather Grey','Bubble Gum Pink'],
+    59,
+    {created_at: time::now(), updated_at: time::now()}
+);
+
+-- tuple for multiple records
+INSERT INTO product (name, colours, price, time) VALUES
+('Cruiser Hoodie', ['Dark Heather Grey','Bubble Gum Pink'], 59, {created_at: time::now(), updated_at: time::now()}),
+('Surreal T-Shirt', ['White Pink','Purple White'], 25, {created_at: time::now(), updated_at: time::now()});
+
+-- copy
+INSERT INTO product_copy (SELECT * FROM product);
+
+-- INSERT with JSON (does not need CONTENT)
+INSERT INTO product {
+    name: 'Cruiser Hoodie',
+    colours: ['Dark Heather Grey','Bubble Gum Pink'],
+    price: 59,
+    time: {
+        created_at: time::now(),
+        updated_at: time::now()
+    }
+};
+
+-- multiple records (list)
+INSERT INTO product [
+    {
+        name: 'Cruiser Hoodie',
+        colours: ['Dark Heather Grey','Bubble Gum Pink']
+    },
+    {
+        name: 'Surreal T-Shirt',
+        colours: ['White Pink','Purple White']
+    }
+];
+
+-- from http::get()
+INSERT INTO pokemon http::get('https://pokeapi.co/api/v2/pokemon/pikachu/');
+
+
+-- UPSERT
+--  update and insert
+
+-- update with INSERT
+INSERT INTO product (id, name, colours)
+VALUES (1, 'Cruiser Hoodie', ['Dark Heather Grey','Bubble Gum Pink']);
+
+INSERT INTO product (id)
+VALUES (1) ON DUPLICATE KEY UPDATE colours += ['Purple'];
+
+-- update with UPSERT
+UPSERT product:ulid() SET colours += ['Purple'];
+
+UPSERT product:ulid() CONTENT {colours: ['Purple']};
+
