@@ -1,0 +1,214 @@
+SELECT * FROM product;
+SELECT name FROM product;
+SELECT name AS product_name FROM product;
+
+-- WHERE
+SELECT * FROM product
+WHERE "Black Pink" IN colours;
+
+-- GROUP BY
+--  generally used with agregate function (like count())
+--  surrealdb requires GROUP ALL for record count on table, unlike relational databases
+SELECT
+    product_name,
+    count() AS number_of_orders,
+    math::sum(price * quantity) AS sum_sales
+FROM order
+GROUP BY product_name;
+
+-- ORDER BY
+--  default is ASC
+SELECT
+    product_name,
+    count() AS number_of_orders
+FROM order
+GROUP BY product_name
+ORDER BY number_of_orders DESC;
+
+-- LIMIT
+SELECT
+    product_name,
+    count() AS number_of_orders
+FROM order
+GROUP BY product_name
+ORDER BY number_of_orders DESC
+LIMIT 10;
+
+-- Selecting single record
+SELECT name, email
+FROM person
+WHERE id = person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+-- Selecting range of records
+SELECT name, email
+FROM person
+WHERE id >= person:01FTP9H7BG8VDANQPN8J3Y857R
+AND id < person:01HG9EFC0R8DA8F87VNYP0CD8A;
+
+
+-- selecting by id is more performant
+--  as no table scan is done, just fetch from key-value store
+
+-- Selecting single record by id
+SELECT name, email
+FROM person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+-- Selecting range of records by id range
+--  anti-pattern?
+SELECT name, email
+FROM person:01FTP9H7BG8VDANQPN8J3Y857R..01HG9EFC0R8DA8F87VNYP0CD8A;
+
+
+
+-- Using omit
+SELECT * OMIT time FROM person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+-- Not using omit
+SELECT id, first_name, last_name, name, email, phone, address,
+address_history, payment_details
+FROM person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+
+-- working with objects
+
+-- Select the first colour in the colours array
+SELECT colours[0]
+FROM product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+-- Select updated_at from the time object
+SELECT time.updated_at
+FROM product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+-- Select the entire array of objects
+SELECT images
+FROM product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+-- Select all the URLs in the images array of objects
+SELECT images.*.url
+FROM product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+-- Select the first URL in the images array of objects
+SELECT images[0].url
+FROM product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+
+-- object array functions
+
+-- Returns the unique items in an array
+SELECT array::distinct(sub_category) AS unique_sub_cat  FROM product
+GROUP ALL;
+
+-- Flattens and returns the unique items in an array
+SELECT array::group(details) AS unique_details
+FROM product
+GROUP ALL;
+
+-- Select the product name and the number of colours it has
+SELECT
+  name,
+  array::len(colours) AS number_of_colours
+FROM product;
+
+-- Select the person name and the number of address fields
+SELECT
+  name,
+  object::len(address) AS number_of_address_fields
+FROM person;
+
+
+-- Tempfiles
+--  processes querry in tempfiles on disk, rather than in memory
+--  generally slower
+SELECT count() AS number_of_orders,
+time::format(time.created_at, "%Y-%m") AS month,
+math::sum(price * quantity) AS sum_sales, currency
+FROM order
+GROUP BY month, currency
+ORDER BY month DESC
+TEMPFILES;
+
+
+-- using LET
+
+--(without)
+-- Find the name of the product where the price is higher than the avg price
+SELECT name from product
+WHERE [price] > (
+  SELECT math::mean(price) AS avg_price FROM product GROUP ALL
+  ).avg_price;
+
+--(with)
+-- Using the let statement to store the query result
+LET $avg_price = (
+  SELECT math::mean(price) AS avg_price FROM product GROUP ALL
+  ).avg_price;
+
+-- Find the name of the product where the price is higher than the avg price
+SELECT name from product
+WHERE [price] > $avg_price;
+
+
+-- using LET as CTE (common table expressions)
+LET $field_name = "name";
+LET $table = "product";
+LET $id = "01FSXKCPVR8G1TVYFT4JFJS5WB";
+
+RETURN $table;
+
+SELECT type::field($field_name)
+FROM type::thing($table, $id)
+
+
+-- RETURN statement
+
+-- Return a number
+RETURN 1337; 
+SELECT * FROM ONLY 1337;
+
+-- Return a select statement
+RETURN (SELECT name FROM person);
+
+-- RETURN vs SELECT
+-- Return a record
+RETURN person:01FTP9H7BG8VDANQPN8J3Y857R.*;
+SELECT * FROM ONLY person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+-- Return a field value inside the record
+RETURN person:01FTP9H7BG8VDANQPN8J3Y857R.name;
+SELECT VALUE name FROM ONLY person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+
+
+-- RETURN transaction
+
+-- Start transaction
+BEGIN;
+-- Setup accounts
+CREATE account:one SET balance = 135605.16;
+CREATE account:two SET balance = 91031.31;
+
+-- Move money
+UPDATE account:one SET balance += 300.00;
+UPDATE account:two SET balance -= 300.00;
+
+-- Return new account balances
+RETURN {
+    account_one_balance: account:one.balance,
+    account_two_balance: account:two.balance
+};
+COMMIT;
+-- Finish transaction
+
+
+-- LIVE SELECT 
+--  real time / live querry
+
+-- Start a Live Query
+LIVE SELECT * from product;
+-- returns a uuid, the live-querry unique id
+
+-- Stop a Live Query by specifying its uuid
+KILL u"57f4964c-006f-463b-a965-19a3cec330b9";
+
+-- Start a live query using JSON patch format
+LIVE SELECT DIFF from product;
