@@ -1,0 +1,82 @@
+-- updating using INSERT
+INSERT INTO product (id)
+VALUES (1),(1) ON DUPLICATE KEY UPDATE colours += ['Purple'];
+
+INSERT INTO product (id, colours) 
+VALUES (2, ['Pink']), (2, ['Dark Heather Grey','Bubble Gum Pink', 'Purple'])
+ON DUPLICATE KEY UPDATE colours = $input.colours;
+
+
+-- four methods of UPDATE
+--  there are 5?? (with alias)
+
+-- Update the currency field in the entire product table
+UPDATE product SET currency = "USD";
+UPDATE product MERGE {currency: "USD"};
+UPDATE product PATCH [{
+    op: "replace",
+    path: "currency",
+    value: "USD"
+}];
+
+-- Update the entire product table to contain only the currency field
+UPDATE product CONTENT {currency: "USD"};
+
+-- Replace is an Alias for CONTENT
+UPDATE product REPLACE {currency: "USD"};
+
+
+-- SET
+--      uses SQL syntax
+
+-- MERGE
+--      uses JSON-like syntax
+--      sends partial documents in our own simplified way
+
+-- PATCH
+--      uses JSON patch specification
+--      sends partial documents in a standards-compliant way
+--          more flexible than MERGE, more complex syntax
+
+-- CONTENT/REPLACE
+--      always sends the whole document
+--      replaces content previously in record
+
+
+
+-- UPDATE a single record
+-- SET
+UPDATE product:01GRTTE7DG94R864R67MGDT0QM SET
+  colours -= "Pink",
+  colours += "Bubble Gum Pink",
+  time.updated_at = time::now();
+
+-- PATCH
+UPDATE product:01GRTTE7DG94R864R67MGDT0QM PATCH [
+  {
+    op: "remove",
+    path: "colours/1"
+  },
+  {
+    op: "add",
+    path: "colours",
+    value: "Bubble Gum Pink"
+  },
+  {
+    op: "replace",
+    path: "time.updated_at",
+    value: time::now()
+  }
+];
+
+
+-- Update a range of records with record IDs (recommended if possible)
+UPDATE
+  product:01FZ0CR6N09V5RG9RQ9A3264GX..=01G0MW4VTG8QZR3A4BTEXHXWS7
+SET currency = "USD", time.updated_at = time::now();
+
+-- Update a range of records with the where clause
+UPDATE product
+SET currency = "USD", time.updated_at = time::now()
+WHERE time.created_at >= d"2022-10-19T00:01:53Z"
+AND time.created_at <= d"2022-10-26T18:00:05Z";
