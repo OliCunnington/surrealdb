@@ -1,0 +1,41 @@
+-- Delete sub_category for one record
+UPDATE product:01FSXKCPVR8G1TVYFT4JFJS5WB
+SET sub_category = NONE;
+
+-- Delete sub_category for the entire table
+UPDATE product UNSET sub_category;
+
+
+-- REMOVE FIELD -> only works with SCHEMA definitions
+-- schemaless tables use SET ... NONE or UNSET
+-- NULL means field is empty, NONE means field is non-existant
+
+-- Delete sub_category for the entire table
+UPDATE product MERGE {sub_category: NONE};
+UPDATE product PATCH [
+  {
+    op: "remove",
+    path: "sub_category"
+  }
+];
+
+-- UNSET does not work in CONTENT, MERGE and PATCH clauses
+-- need to use NONE (or REMOVE operation for PATCH)
+
+-- Delete a single record
+DELETE product:01FSXKCPVR8G1TVYFT4JFJS5WB;
+
+-- Delete the entire table
+DELETE person;
+
+-- Delete a range of records with record IDs (recommended if possible)
+DELETE product:01FZ0CR6N09V5RG9RQ9A3264GX..=01G0MW4VTG8QZR3A4BTEXHXWS7;
+
+-- Delete a range of records with the where clause
+DELETE product
+WHERE time.created_at >= d"2022-10-19T00:01:53Z"
+AND time.created_at <= d"2022-10-26T18:00:05Z";
+
+-- Deleting tabbles
+REMOVE TABLE person;
+REMOVE TABLE product;
