@@ -1,0 +1,87 @@
+-- G = (V, E)
+-- points connected by lines
+
+-- subject → predicate → object
+-- node → edge → node
+-- noun → verb → noun
+-- person → order → product
+
+
+
+-- RELATE statement
+
+-- wishlist
+RELATE person:01GT2ZEF2G8AC8D7H7FMZ1ZYZ3 -> wishlist:ulid() -> product:01HGAR7A0R9BETTCMATM6SSXPT;
+
+-- cart
+RELATE person:01HBC4FGG0904R927Q82SVZ1JB -> cart:ulid() -> product:01GXRS3FZG8Y8SDBNHMC14N25X;
+
+-- order
+RELATE person:01GCSHZEP89F1B9T33Y4M9VA9J -> order:ulid() -> product:01H35P394G93AVCEF8KX59H5RY;
+
+-- review
+RELATE person:01FSZ7A4W888FAYSSP8T3NV3MX -> review:ulid() -> product:01GBE3CTMG93XBKM07CFH1S9S6;
+
+-- in → id → out
+
+
+-- Adding Edge data with SET and CONTENT
+
+-- set
+RELATE person:01GT2ZEF2G8AC8D7H7FMZ1ZYZ3 -> wishlist:ulid() -> product:01HGAR7A0R9BETTCMATM6SSXPT
+SET time.created_at = time::now();
+
+-- content
+RELATE person:01GFFXDCG89SAR3WM2SDV2E1RA -> order:ulid() -> product:01H35P394G93AVCEF8KX59H5RY
+CONTENT {
+    quantity: 2,
+    product_name: ->product.name,
+    price: ->product.price,
+    shipping_address: <-person.address
+};
+
+-- RELATE statement creates a bidirectional graph by default
+
+
+-- INSERT multiple relations
+-- list
+INSERT RELATION INTO order [
+  {
+    id: order:01J9XESXSQ5S69ZCDMVGGFVQVQ,
+    in: person:01J9XESXSQ7NKPDSWZ4963QPP1,
+    out: product:01J9XESXSQK2078BKKJ7S6JPC2
+  },
+  {
+    id: order:01J9XESXSQ0XVDKQ86W943A97H,
+    in: person:01J9XESXSQTK65SKAWGZ6MNGP6,
+    out: product:01J9XESXSQFK0D4F49V2DWHQP3
+  },
+  {
+    id: order:01J9XESXSQAZPSGK6JH12FB72E,
+    in: person:01J9XESXSQ0S2384128FSBY6Q4,
+    out: product:01J9XESXSQ11KQYV9RP3SSR6ED
+  }
+]
+
+-- cartesian product
+LET $person = (SELECT VALUE id FROM person LIMIT 10);
+LET $product = (SELECT VALUE id FROM product LIMIT 10);
+
+-- statement creates up to 100 entries, hence TIMEOUT
+RELATE $person->order->$product TIMEOUT 3s;
+
+
+-- graph CRUD operation
+-- arrow (->, <-) notation is replacable with . (in.name, out.seller)
+SELECT
+    <-person.name AS person_name,
+    in.name,
+    ->product.seller,
+    out.seller
+FROM order LIMIT 4;
+
+UPDATE order
+SET shipping_address = <-person.address;
+
+DELETE order
+WHERE <-person.name ?= "Leoma Santiago"
