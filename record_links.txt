@@ -1,0 +1,45 @@
+-- one-way record link
+UPDATE product SET seller = seller:surrealdb;
+
+-- embedded/field values of a record ID create a link
+-- links utilize underlying key-value store to skip look-ups
+
+-- above statement references non-existant table
+-- allowed, and creates table/entry on execution
+
+-- adding data to new table
+CREATE seller:surrealdb
+SET name = "SurrealDB", email = "education@surrealdb.com"
+
+
+-- bidirectional record link
+CREATE address_history:ulid(), payment_details:ulid()
+SET person = person:01GFFXDCG89SAR3WM2SDV2E1RA
+PARALLEL;
+
+-- adding links to person
+UPDATE person:01GFFXDCG89SAR3WM2SDV2E1RA MERGE {
+  address_history: address_history:01HCWCEB1R8Y499XJYPVWE04RX,
+  payment_details: payment_details:01FTZ3MR7095CRDT1A04NNRQ6H
+};
+
+-- updates specific person id to link to payment_details and address_history
+-- omitting id will link all persons to these external table ids
+
+
+-- links in CRUD operations
+
+-- Selecting the current address from the person table
+SELECT
+    person.address.address_line_1  AS current_address,
+    addresses[0].address_line_1 AS previous_address
+FROM address_history:01HCWCEB1R8Y499XJYPVWE04RX;
+
+-- Adding the current address to the address_history table
+UPDATE address_history:01HCWCEB1R8Y499XJYPVWE04RX
+SET addresses += person.address;
+
+-- Deleting the address history from Leoma
+DELETE address_history
+WHERE person.name = "Leoma Santiago"
+
