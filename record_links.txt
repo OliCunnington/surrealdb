@@ -42,4 +42,3 @@ SET addresses += person.address;
 -- Deleting the address history from Leoma
 DELETE address_history
 WHERE person.name = "Leoma Santiago"
-
