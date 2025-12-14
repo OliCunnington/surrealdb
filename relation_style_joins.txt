@@ -1,0 +1,74 @@
+-- SQL IN semi-join
+-- Outer query
+SELECT name
+FROM product
+WHERE id IN (
+  -- Inner query
+  SELECT in
+  FROM product_sku
+  WHERE colour = "Black Pink"
+)
+AND id = "01G0MW4VTG8QZR3A4BTEXHXWS7";
+
+-- Surreal IN semi-join
+-- Outer query
+SELECT name
+FROM product:01G0MW4VTG8QZR3A4BTEXHXWS7
+WHERE id IN (
+    -- Inner query
+    SELECT VALUE in
+    FROM product_sku
+    WHERE colour = "Black Pink"
+);
+
+--SELECT VALUE allows you to return an array of values instead of object (surreal default)
+
+
+-- Correlated subquerry
+-- SQL
+SELECT name
+FROM product
+WHERE EXISTS (
+  SELECT in FROM product_sku
+  WHERE product_sku.in = product.id
+  AND colour = "Black Pink"
+)
+AND id = "01G0MW4VTG8QZR3A4BTEXHXWS7";
+
+-- Surreal 
+SELECT name
+FROM product:01G0MW4VTG8QZR3A4BTEXHXWS7
+WHERE (
+    SELECT in FROM product_sku
+    WHERE in = $parent.id
+    AND colour = "Black Pink"
+);
+
+
+--Anti-join
+--surreal
+SELECT name
+FROM product
+WHERE !(
+    SELECT in FROM product_sku
+    WHERE in = $parent.id
+    AND colour = "Black Pink"
+);
+
+-- ! instead of NOT EXISTS
+-- NOT IN is valid
+
+
+-- JOIN
+-- SQL
+SELECT product.name
+FROM product_sku
+JOIN product ON product.id = product_sku.in
+WHERE product_sku.colour = "Black Pink"
+AND product_sku.in = 01G0MW4VTG8QZR3A4BTEXHXWS7
+
+-- Surreal graph
+SELECT <-product.name
+FROM product_sku:01FRVHS08G9WMAHFQTFY82ENXQ
+WHERE colour = "Black Pink"
+
