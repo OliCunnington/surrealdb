@@ -1,0 +1,106 @@
+
+-- info of things that have, and can be, defined at database level
+INFO FOR DB;
+
+-- tables can be a mix of schemafull and schemaless
+
+-- schemafull definition (with if not exists)
+DEFINE TABLE IF NOT EXISTS product SCHEMAFULL;
+-- schemafull table will not allow new fields, unless added with DEFINE
+
+-- different table types
+
+--only allowing graph relations
+DEFINE TABLE graph_only TYPE RELATION;
+
+--not allowing graph relations
+DEFINE TABLE no_graph   TYPE NORMAL;
+
+--allows both graph and non-graph data (default)
+DEFINE TABLE yolo       TYPE ANY;
+
+
+
+--TYPE RELATION tables can take additional constraints (in/out, from/to) 
+DEFINE TABLE IF NOT EXISTS order
+TYPE RELATION FROM person TO product;
+
+DEFINE TABLE IF NOT EXISTS product_sku 
+TYPE RELATION IN product OUT product;
+
+
+
+-- Pre-Computed table views
+-- use AS after DEFINE TABLE clause
+DEFINE TABLE IF NOT EXISTS avg_product_review AS
+SELECT
+  count() AS number_of_reviews,
+  math::mean(<float> rating) AS avg_review,
+  ->product.id AS product_id,
+  ->product.name AS product_name
+FROM review
+GROUP BY product_id, product_name;
+
+-- Query it like a table
+SELECT * FROM avg_product_review;
+
+-- Event-based
+-- when you run add or remove data from the underlying table
+-- in above example, the review table, it triggers a matching event on the avg_product_review table view
+
+-- Materialised view
+-- the first time we run the table view query, it will run the query like a normal SELECT statement
+-- but then materialise the result. Instead of normal views which behave like bookmarked SELECT queries,
+-- that just look like tables to the user.
+
+-- Incrementally updating
+-- for any subsequent run, it will listen for the event trigger and perform the most efficient operation
+-- possible to always keep the result up to date, instead of just running the SELECT statement again.
+
+
+-- Limitiations
+--  initial run is very compute intesive
+--  graph relations supported, but events only trigger based on FROM table
+--   example table, deleting REVIEW updates, deleting PRODUCT does not
+--    review will be removed from avg_product_review
+--    product will still show in avg_product_review
+
+
+
+-- CHANGEFEED
+
+-- Define the Change Feed and its duration
+DEFINE TABLE IF NOT EXISTS product CHANGEFEED 1d;
+
+-- Update a single record
+UPDATE product:01GRTTE7DG94R864R67MGDT0QM SET
+  colours -= "Pink",
+  colours += "Bubble Gum Pink",
+  time.updated_at = time::now();
+
+-- Replay the update to the product table
+-- The show timestamp must be after the Change Feed was created
+-- Change it to be a few seconds after the time::now() we did above
+SHOW CHANGES FOR TABLE product SINCE d"2024-07-20T10:00:00Z" LIMIT 10;
+-- SINCE <time> needs to be after the time the CHANGEFEED was defined
+
+
+
+-- Table PERMISSIONS
+-- Specify access permissions for the order table
+DEFINE TABLE IF NOT EXISTS order
+  PERMISSIONS
+    FOR select
+      -- A user can select all their own orders
+      WHERE in.email = $auth.email
+    FOR create, update
+      -- A user can create or update their own orders
+      WHERE in.email = $auth.email
+    FOR delete
+      -- A user can delete their own order
+      WHERE in.email = $auth.email;
+
+-- Can also be specified all at once
+DEFINE TABLE IF NOT EXISTS order
+  PERMISSIONS
+    FOR select, update, delete WHERE in.email = $auth.email;
