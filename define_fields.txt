@@ -1,0 +1,118 @@
+DEFINE FIELD product_name ON TABLE order;
+
+DEFINE FIELD product_name 
+    ON TABLE order
+  TYPE string;
+
+DEFINE FIELD quantity 
+    ON TABLE order
+    TYPE number;
+
+-- object, and internal fields
+DEFINE FIELD time
+    ON TABLE product
+    TYPE object;
+DEFINE FIELD time.created_at
+    ON TABLE product
+    TYPE datetime;
+DEFINE FIELD time.updated_at
+    ON TABLE product
+    TYPE datetime;
+
+-- arrays and arrays of objects
+
+DEFINE FIELD sizes
+    ON TABLE product
+    TYPE array<string>;
+-- or
+DEFINE FIELD IF NOT EXISTS sizes
+    ON TABLE product
+    TYPE array;
+DEFINE FIELD IF NOT EXISTS sizes.*
+    ON TABLE product
+    TYPE string;
+
+
+-- addresses.* means all the address objects
+-- so addresses.*.city is all city fields, in all addresses
+DEFINE FIELD addresses
+    ON TABLE address_history
+    TYPE array<object>;
+DEFINE FIELD addresses.*.address_line_1
+    ON TABLE address_history
+    TYPE string;
+DEFINE FIELD addresses.*.address_line_2
+    ON TABLE address_history
+    TYPE option<string>;
+DEFINE FIELD addresses.*.city
+    ON TABLE address_history
+    TYPE string;
+DEFINE FIELD addresses.*.coordinates
+    ON TABLE address_history
+    TYPE geometry<point>;
+DEFINE FIELD addresses.*.country
+    ON TABLE address_history
+    TYPE string;
+DEFINE FIELD addresses.*.post_code
+    ON TABLE address_history
+    TYPE string;
+
+
+-- "cheat code" FLEXIBLE
+-- allows schemaless fields on schemafull tables
+DEFINE FIELD shipping_address
+    ON TABLE order
+    FLEXIBLE TYPE object;
+
+DEFINE FIELD addresses
+    ON TABLE address_history
+    FLEXIBLE TYPE array<object>;
+
+-- record and option type
+DEFINE FIELD address_history
+    ON TABLE person
+    TYPE record<address_history>;
+
+DEFINE FIELD time.shipped_at
+    ON TABLE order
+    TYPE option<datetime>;
+
+
+-- constraints and assertions
+DEFINE FIELD email
+    ON TABLE person
+    TYPE string
+    ASSERT string::is::email($value);
+
+DEFINE FIELD rating
+    ON TABLE review
+    TYPE number
+    ASSERT $value > 0 AND $value < 6;
+
+
+-- default values
+--  custom functions can also be called
+
+-- DEFAULT is better used for fields like time.created_at as the DEFAULT time::now() 
+-- will be static once used for the first time
+DEFINE FIELD time.created_at
+    ON TABLE person
+    TYPE datetime
+    DEFAULT time::now();
+
+-- VALUE is better used for fields like time.updated_at as the VALUE time::now() 
+-- will run every time the record is updated
+DEFINE FIELD time.updated_at
+    ON TABLE person
+    TYPE datetime
+    VALUE time::now();
+
+
+-- field permissions
+DEFINE FIELD time.shipped_at
+    ON TABLE order
+    TYPE option<datetime>
+    PERMISSIONS
+      FOR select WHERE in.email = $auth.email,
+      FOR create, delete NONE,
+      FOR update WHERE in.email = $auth.email AND time.shipped_at is NONE;
