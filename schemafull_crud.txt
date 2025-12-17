@@ -1,0 +1,32 @@
+-- schemaless
+UPDATE product:01FSXKCPVR8G1TVYFT4JFJS5WB
+SET new_field = "why not?";
+
+UPDATE product UNSET category;
+
+
+-- schemafull
+REMOVE FIELD category ON TABLE product;
+-- only removes definition, needs:
+-- for multiple
+UPDATE product;
+-- or
+UPDATE product UNSET category;
+
+
+-- updating fields and tables
+
+-- Change from a generic number type to float
+DEFINE FIELD OVERWRITE price ON TABLE product TYPE float;
+
+-- Change from schemafull to schemaless
+DEFINE TABLE OVERWRITE product TYPE NORMAL SCHEMALESS;
+
+-- Change again from schemaless to schemafull
+ALTER TABLE product SCHEMAFULL;
+
+-- DEFINE ... OVERWRITE can be used to both create new definitions 
+-- and update existing ones, but needs to include the entire definition
+
+-- The ALTER statement only updates existing definitions and only needs
+-- to include the items to be updated, not the entire definition
