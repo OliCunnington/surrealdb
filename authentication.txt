@@ -1,0 +1,150 @@
+-- Root owners have access to (and can create users on) all namespaces and databases
+DEFINE USER admin ON ROOT PASSWORD 'VerySecurePassword!' ROLES OWNER;
+
+-- Namespace owners have access to (and can create users on) their specific namespace and every database in it
+DEFINE USER john ON NAMESPACE PASSWORD 'VerySecurePassword!' ROLES OWNER;
+
+-- Database owners have access to (and can create users on) their specific database.
+DEFINE USER jane ON DATABASE PASSWORD 'VerySecurePassword!' ROLES OWNER;
+
+
+-- argon2 enc
+RETURN crypto::argon2::generate('VerySecurePassword!');
+
+DEFINE USER gordon_freeman ON DATABASE
+PASSHASH '$argon2id$v=19$m=19456,t=2,p=1$0kz5uZcfFg/VPHoDEGYgbQ$8HBIZXSOYzZ2qickKAhxwenvILoiWuockJvB8Ma4Stg'
+ROLES EDITOR;
+
+
+-- RBA
+
+-- VIEWER role can only view any resource on the user’s level
+DEFINE USER db_viewer ON DATABASE PASSWORD 'CHANGE_THIS' ROLES VIEWER;
+
+-- OWNER and EDITOR roles can view and edit any resource on the user’s level or below. 
+-- OWNER role can create users and other IAM resources such as access methods
+
+
+-- RECORD users
+-- users defined through a record in a db as opposed to DEFINE USER statement
+-- defined with DEFINE ACCESS statement of TYPE RECORD
+-- allows for SIGNIN and SIGNUP logic and custom table and field permissions
+
+-- SIGNUP 
+-- Defines the logic for when a user signs up as a record user 
+-- usually creates a new record in a table.
+
+-- SIGNIN
+-- Defines the logic for when a user signs in as a record user
+-- usually checks credentials against table records.
+
+-- AUTHENTICATE
+-- Can be used to change the record identifier returned by the SIGNUP and SIGNIN clauses
+-- If no record identifier is returned, it will return an error
+-- AUTHENTICATE clause also used to log or stop authentication attempts from record users
+-- always executed across the SIGNUP and SIGNIN clauses
+
+-- by default, record users have no permissions
+-- can only access data if allowed by a PERMISSIONS
+-- defined on every data resource, defaults to NONE
+
+
+-- define a user table and fields
+
+
+-- An authenticated user can select, update and delete its own user record
+DEFINE TABLE user SCHEMAFULL
+  PERMISSIONS
+    FOR select, update, delete WHERE id = $auth.id;
+
+DEFINE FIELD name ON user TYPE string;
+
+-- Asserts that the email provided by the user is actually an email address
+DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
+
+DEFINE FIELD password ON user TYPE string;
+DEFINE FIELD enabled ON user TYPE bool;
+
+-- Forbid users to use an email that is already in use by another user
+DEFINE INDEX email ON user FIELDS email UNIQUE;
+
+
+-- define user record access
+DEFINE ACCESS user ON DATABASE TYPE RECORD
+  -- SIGNUP logic needs name, email and password parameters to be provided by the user
+  -- use them as $name, $email and $password
+  SIGNUP (
+    CREATE user CONTENT {
+      name: $name,
+      email: $email,
+      password: crypto::argon2::generate($password),
+      enabled: true
+    }
+  )
+  -- SIGNIN logic needs the email and password parameters to be provided by the user
+  -- use them as $email and $password
+  SIGNIN (
+    SELECT * FROM user WHERE email = $email
+    AND crypto::argon2::compare(password, $password)
+  )
+  -- optional AUTHENTICATE clause
+  -- use THROW to return a custom error message
+  AUTHENTICATE {
+    IF !$auth.enabled {
+      THROW 'This user is not enabled';
+    };
+
+    RETURN $auth;
+  };
+
+
+-- SESSIONS
+DEFINE USER username ON DATABASE
+PASSWORD 'CHANGE_THIS'
+DURATION FOR SESSION 5d;
+
+DEFINE ACCESS account ON DATABASE TYPE RECORD
+  SIGNUP ( CREATE user SET email = $email, pass = crypto::argon2::generate($pass) )
+  SIGNIN ( SELECT * FROM user WHERE email = $email AND crypto::argon2::compare(pass, $pass) )
+  -- DURATION clause, required for all sessions
+  -- default does not expire and is intended to support cases where SurrealDB is used as a traditional backend database
+  DURATION FOR SESSION 12h;
+
+
+-- TOKENS
+DEFINE USER username ON DATABASE
+PASSWORD 'CHANGE_THIS'
+DURATION FOR TOKEN 15m;
+
+DEFINE ACCESS account ON DATABASE TYPE RECORD
+  SIGNUP ( CREATE user SET email = $email, pass = crypto::argon2::generate($pass) )
+  SIGNIN ( SELECT * FROM user WHERE email = $email AND crypto::argon2::compare(pass, $pass) )
+  DURATION FOR TOKEN 5s;
+
+
+
+-- querry safety
+--   prevents SQL injection attacks 
+
+-- // Rust SDK
+-- // Do this:
+-- let name = "john"; // User-controlled input.
+-- let mut result = db
+--     .query("CREATE person SET name = $name")
+--     .bind(("name", name))
+--     .await?;
+-- 
+-- // Do NOT do this:
+-- let mut result = db
+--     .query(format!("CREATE person SET name = {name}"))
+--     .await?;
+-- // JavaScript SDK
+-- // Do this:
+-- let name = "john"; // User-controlled input.
+-- let result = await db.query(
+--   "CREATE person SET name = $name;",
+--   { name: name }
+-- );
+-- 
+-- // Do NOT do this:
+-- let result = await db.query("CREATE person SET name = " + name + ";");
