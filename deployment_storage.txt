@@ -1,0 +1,46 @@
+-- key reason for separating storage and compute is to scale resources separately
+
+-- benefits:
+--  Less wasted capacity as scale is optimised for each workload
+--  Greater cost efficiency
+--  Greater flexibility
+--  Better fault tolerance
+
+-- surrealdb provides various key-value storage engines, need dependent
+--  Directly in the browser
+--  As a single-node server or in embedded devices
+--  As a multi-node cluster in the cloud
+
+-- also five storage engines
+
+
+-- browser
+--  WebAssembly
+--   IndexedDB, a large-scale, NoSQL storage system
+--   lives in browser in a sandboxed protected environment
+
+-- single-node server/embedded devices
+--  choose between are RocksDB (default) and SurrealKV
+--  RocksDB
+--    Was originally a fork of Google’s LevelDB but was then developed
+--      and maintained by Meta (Facebook) entirely in C++.
+--    It’s optimised for fast, low-latency storage such as flash drives
+--      and high-speed disk drives using the log-structured merge-tree data structure (LSM).
+--    LSM data structures are highly efficient for write-heavy workloads as they
+--      minimise the number of disk writes and require less space than B-Trees, as they
+--      don’t require constant reorganisation of data.
+--  SurrealKV
+--    SurrealKV is our own storage engine developed by us from scratch, written entirely in Rust.
+--    Made to support the power and flexibility of SurrealDB, opening the door to exciting use
+--      cases such as versioned queries over time, immutable data querying, historic aggregate
+--      query analysis, and versioned graph queries.
+--    Designed as a new data structure, an Immutable Versioned Adaptive Radix Trie (VART)
+--    still in development, subject to API changes
+
+-- multi-node cluster
+-- TiKV
+--  TiKV is a distributed and transactional key-value database from PingCap, built in Rust
+--  It uses the Raft consensus algorithm and RocksDB (LSM) as the underlying storage engine
+-- FoundationDB
+--  FoundationDB is a distributed and transactional key-value database from Apple, built in C++
+--  It uses the Paxos consensus algorithm and a B-tree based on SQLite as its underlying storage engine
