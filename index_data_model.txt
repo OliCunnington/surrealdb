@@ -1,0 +1,61 @@
+-- indexing capabilities 
+--   optimise data retrieval and search efficiency
+
+--   Traditional indexes such as single field indexes, composite indexes and unique indexes
+--   full-text search indexes and vector search indexes
+
+-- when you add an index, you are creating a copy of part of your data
+--  database has to keep up to date anytime you do a write operation on indexed data
+
+-- adding an index is always a compromise between impacting your write performance to improve your read performance
+
+
+--index, due to table scan instead of directly fetching data
+SELECT name, email FROM person
+WHERE id = person:01FTP9H7BG8VDANQPN8J3Y857R;
+
+SELECT name, email FROM person
+WHERE time.created_at >= d'2022-01-30T20:06:30Z'
+AND time.created_at <= d'2023-11-27T22:30:23Z';
+
+
+-- indexed example
+-- query is using the index by using the EXPLAIN clause on the SELECT statement
+
+DEFINE INDEX person_time ON TABLE person FIELDS time.created_at;
+
+SELECT name, email FROM person
+WHERE time.created_at >= d'2022-01-30T20:06:30Z'
+AND time.created_at <= d'2023-11-27T22:30:23Z'
+EXPLAIN;
+
+
+-- optimising your queries:
+
+--   use Record IDs whenever possible
+--   needing a WHERE, GROUP BY or ORDER BY fields other then our Record ID:
+--     look for common fields used and DEFINE INDEX for those fields
+--   use the EXPLAIN clause to check if the index is working, or needs adjusting
+
+-- important to check if the index is actually improving the performance
+
+
+-- full text search indexes
+
+-- define the ANALYZER
+-- uses TOKENIZERS to split text into words
+DEFINE ANALYZER IF NOT EXISTS blank_snowball
+    -- blank to split based on spaces
+    TOKENIZERS blank
+    FILTERS lowercase, snowball(english);
+
+-- DEFINE INDEX on either single or multiple text FIELDS
+DEFINE INDEX IF NOT EXISTS review_content
+    ON TABLE review
+    FIELDS review_text
+    -- add the SEARCH ANALYZER defined previously, BM25 ranking algorithm
+    SEARCH ANALYZER blank_snowball BM25;
+
+-- perform the search
+SELECT id, rating, review_text FROM review
+WHERE review_text @@ 'wear nonstop';
