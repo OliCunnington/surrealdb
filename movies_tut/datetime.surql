@@ -4,7 +4,7 @@ DEFINE FUNCTION OVERWRITE fn::date_to_datetime($input: string) -> datetime {
 };
 
 
-DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> string {
+DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> option<string> {
     IF      $input = 'Jan' { '01' }
     ELSE IF $input = 'Feb' { '02' }
     ELSE IF $input = 'Mar' { '03' }
