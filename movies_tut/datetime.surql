@@ -1,6 +1,11 @@
-DEFINE FUNCTION OVERWRITE fn::date_to_datetime($input: string) -> datetime {
+DEFINE FUNCTION OVERWRITE fn::date_to_datetime($input: string) -> option<datetime> {
     LET $split = $input.split(' ');
-    <datetime>($split[2] + '-' + fn::month_to_num($split[1]) + '-' + $split[0])
+    IF fn::month_to_num($split[1]) IS NONE {
+        -- THROW "Invalid input: `" + $input + " : " + $split[1]
+        NONE
+    } ELSE {
+        <datetime>($split[2] + '-' + fn::month_to_num($split[1]) + '-' + $split[0])
+    }
 };
 
 
@@ -18,6 +23,7 @@ DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> option<string> {
     ELSE IF $input = 'Nov' { '11' }
     ELSE IF $input = 'Dec' { '12' }
     ELSE {
-        THROW "Invalid input: `" + $input + "`. Please use a three-letter abbreviation such as 'Oct'."
+        -- THROW "Invalid input: `" + $input + "`. Please use a three-letter abbreviation such as 'Oct'."
+        NONE
     }
 };

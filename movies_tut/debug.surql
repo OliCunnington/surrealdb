@@ -10,4 +10,10 @@
 -- }
 
 -- (SELECT VALUE Released.split(" ")[1] FROM naive_movie).group() 
-SELECT Title, Released FROM naive_movie WHERE Released.contains("1984")
+SELECT VALUE Released FROM naive_movie WHERE Released.contains("Oct");
+
+(SELECT VALUE Released FROM naive_movie WHERE Released.contains("Oct")).map(|$m| fn::date_to_datetime($m));
+
+FOR $r IN (SELECT VALUE Released FROM naive_movie WHERE Released.contains("Oct")){
+    fn::date_to_datetime($r)
+}
