@@ -10,20 +10,23 @@ DEFINE FUNCTION OVERWRITE fn::date_to_datetime($input: string) -> option<datetim
 
 
 DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> option<string> {
-    IF      $input = 'Jan' { '01' }
-    ELSE IF $input = 'Feb' { '02' }
-    ELSE IF $input = 'Mar' { '03' }
-    ELSE IF $input = 'Apr' { '04' }
-    ELSE IF $input = 'May' { '05' }
-    ELSE IF $input = 'Jun' { '06' }
-    ELSE IF $input = 'Jul' { '07' }
-    ELSE IF $input = 'Aug' { '08' }
-    ELSE IF $input = 'Sep' { '09' }
-    ELSE IF $input = 'Oct' { '10' }
-    ELSE IF $input = 'Nov' { '11' }
-    ELSE IF $input = 'Dec' { '12' }
+    IF      $input IS 'Jan' { '01' }
+    ELSE IF $input IS 'Feb' { '02' }
+    ELSE IF $input IS 'Mar' { '03' }
+    ELSE IF $input IS 'Apr' { '04' }
+    ELSE IF $input IS 'May' { '05' }
+    ELSE IF $input IS 'Jun' { '06' }
+    ELSE IF $input IS 'Jul' { '07' }
+    ELSE IF $input IS 'Aug' { '08' }
+    ELSE IF $input IS 'Sep' { '09' }
+    ELSE IF $input IS 'Oct' { '10' }
+    ELSE IF $input IS 'Nov' { '11' }
+    ELSE IF $input IS 'Dec' { '12' }
     ELSE {
         -- THROW "Invalid input: `" + $input + "`. Please use a three-letter abbreviation such as 'Oct'."
         NONE
     }
 };
+
+
+fn::month_to_num('Jan')
