@@ -29,4 +29,12 @@ DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> option<string> {
 };
 
 
-fn::month_to_num('Jan')
+fn::month_to_num('Jan');
+fn::month_to_num('Feb');
+fn::month_to_num('Mar');
+fn::month_to_num('Apr');
+fn::month_to_num('May');
+fn::month_to_num('Jun');
+fn::month_to_num('Jul');
+
+<datetime>"1991-08-25"
