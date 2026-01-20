@@ -1,10 +1,11 @@
 DEFINE FUNCTION OVERWRITE fn::date_to_datetime($input: string) -> option<datetime> {
     LET $split = $input.split(' ');
-    IF fn::month_to_num($split[1]) IS NONE {
+    LET $m = fn::month_to_num($split[1]);
+    IF $m IS NOT NONE {
         -- THROW "Invalid input: `" + $input + " : " + $split[1]
-        NONE
+        RETURN <datetime>($split[2] + '-' + $m + '-' + $split[0])
     } ELSE {
-        <datetime>($split[2] + '-' + fn::month_to_num($split[1]) + '-' + $split[0])
+        NONE
     }
 };
 
@@ -37,7 +38,9 @@ DEFINE FUNCTION OVERWRITE fn::month_to_num($input: string) -> option<string> {
 --     ELSE {NONE}
 -- }
 
--- fn::month_to_num('Jan');
+fn::month_to_num('Jan');
+fn::date_to_datetime('01 Jan 2001');
+
 -- fn::month_to_num('Feb');
 -- fn::month_to_num('Mar');
 -- fn::month_to_num('Apr');
