@@ -1,0 +1,15 @@
+RETURNS inside {}
+	date_to_time
+	month_to_num
+	ratings funcs
+
+adding schema
+	COMPUTE not a thing, <future> available, but unable to get syntax correct
+
+Using the wrong fucking version... 3.0.0 beta only avail linux?
+
+Ubuntu VM running with SurrealDB installed and running
+able to ssh in...
+
+dafuq i do now?
+lol

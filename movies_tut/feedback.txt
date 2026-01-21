@@ -1,8 +1,0 @@
-RETURNS inside {}
-	date_to_time
-	month_to_num
-	ratings funcs
-
-adding schema
-	filter out any values that are not NONE
-		… filter out any values that ARE NONE (?)
