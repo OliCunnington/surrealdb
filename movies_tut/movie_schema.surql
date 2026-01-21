@@ -17,8 +17,16 @@ DEFINE FIELD runtime           ON TABLE movie TYPE duration;
 DEFINE FIELD title             ON TABLE movie TYPE string;
 DEFINE FIELD writers           ON TABLE movie TYPE array<string>;
 
-DEFINE FIELD average_rating    ON TABLE movie 
-    COMPUTED math::mean([imdb_rating, metacritic_rating, rt_rating][WHERE $this IS NOT NONE]);
+DEFINE FIELD OVERWRITE average_rating ON movie VALUE <future>{
+    (math::mean(
+        [imdb_rating, metacritic_rating, rt_rating] [$this IS NOT NONE]
+        )
+    )};
+
+DEFINE FIELD OVERWRITE movie_by ON movie VALUE <future>{$parent.title + " by " + $parent.writers[0]}
+
+-- DEFINE FIELD average_rating    ON TABLE movie 
+--     COMPUTED math::mean([imdb_rating, metacritic_rating, rt_rating][WHERE $this IS NOT NONE]);
 
 -- -------- Query 1 --------
 --      'There was a problem with the database: Parse error: Unexpected token `an identifier`, expected a kind name
