@@ -13,3 +13,6 @@ able to ssh in...
 
 dafuq i do now?
 lol
+
+ofcun@LAPTOP-KSI9D0JN:~$ surreal sql --namespace ns --database db --username root --password root
+2026-01-21T13:38:37.323164Z ERROR surreal::cli: There was a problem with the database: There was an error processing a remote WS request: WebSocket protocol error: SubProtocol error: Server sent no subprotocol
