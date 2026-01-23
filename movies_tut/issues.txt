@@ -29,3 +29,6 @@ ofcun@LAPTOP-KSI9D0JN:~$ surreal sql --namespace ns --database db --username roo
 
 	movies_naive.surql done,
 	cannot seem to connect to app.surrealdb, probably VM port forward needed
+
+
+its linux time...
