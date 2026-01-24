@@ -32,3 +32,7 @@ ofcun@LAPTOP-KSI9D0JN:~$ surreal sql --namespace ns --database db --username roo
 
 
 its linux time...
+
+mem stick to back up some pics and code ?
+
+code on git... so just pics?
