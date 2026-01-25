@@ -36,3 +36,11 @@ its linux time...
 mem stick to back up some pics and code ?
 
 code on git... so just pics?
+
+--port froward and port host tests, all failed
+-- WS error for 8123... default is fine (8000), but no app.surrealdb.com connect
+-- localhost, 127.0.0.1, 127.0.1.1, 0.0.0.0 tried
+-- 
+-- deleted WSL Bridge portforward rule in win-firewall
+
+mint tomorrow?
