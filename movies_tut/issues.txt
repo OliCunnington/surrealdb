@@ -44,3 +44,6 @@ code on git... so just pics?
 -- deleted WSL Bridge portforward rule in win-firewall
 
 mint tomorrow?
+
+-- stick needed... i think
+-- poked around in ozzaks migration tool repo
