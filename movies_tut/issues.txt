@@ -47,3 +47,5 @@ mint tomorrow?
 
 -- stick needed... i think
 -- poked around in ozzaks migration tool repo
+
+-- sticks ordered (projector tu -u-)
