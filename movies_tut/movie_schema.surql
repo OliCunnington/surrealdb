@@ -16,6 +16,8 @@ DEFINE FIELD rt_rating         ON TABLE movie TYPE option<int>;
 DEFINE FIELD runtime           ON TABLE movie TYPE duration;
 DEFINE FIELD title             ON TABLE movie TYPE string;
 DEFINE FIELD writers           ON TABLE movie TYPE array<string>;
+DEFINE FIELD poster            ON TABLE movie TYPE string;
+DEFINE FIELD rated             ON TABLE movie TYPE string;
 
 DEFINE FIELD OVERWRITE average_rating ON movie VALUE <future>{
     (math::mean(
@@ -23,7 +25,7 @@ DEFINE FIELD OVERWRITE average_rating ON movie VALUE <future>{
         )
     )};
 
-DEFINE FIELD OVERWRITE movie_by ON movie VALUE <future>{$parent.title + " by " + $parent.writers[0]}
+-- DEFINE FIELD OVERWRITE movie_by ON movie VALUE <future>{$parent.title + " by " + $parent.writers[0]}
 
 -- DEFINE FIELD average_rating    ON TABLE movie 
 --     COMPUTED math::mean([imdb_rating, metacritic_rating, rt_rating][WHERE $this IS NOT NONE]);
