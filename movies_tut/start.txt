@@ -1,0 +1,4 @@
+surreal start -u root -p root memory
+
+surreal import -u root -p root --ns main --db main ~/Downloads/vsc/surrealdb/movies_tut/movies_naive.surql
+
