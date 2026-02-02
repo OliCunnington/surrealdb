@@ -1,0 +1,5 @@
+curl -X POST -H "Accept: application/json" -d '{"ns":"main","db":"main","ac":"account","name":"user","pass":"password"}' http://localhost:8000/signup
+
+surreal sql --ns main --db main --token "..."
+
+curl -X POST -H "Accept: application/json" -d '{"ns":"main","db":"main","ac":"account","name":"user","pass":"password"}' http://localhost:8000/signin
