@@ -1,37 +1,37 @@
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/movies_naive.surql
+surreal import -u root -p root --ns main --db main ./movies_naive.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/movie_schema.surql
+surreal import -u root -p root --ns main --db main ./movie_schema.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/datetime.surql
+surreal import -u root -p root --ns main --db main ./datetime.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/reviews.surql
+surreal import -u root -p root --ns main --db main ./reviews.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/genre_rating.surql
+surreal import -u root -p root --ns main --db main ./genre_rating.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/analyzers.surql
+surreal import -u root -p root --ns main --db main ./analyzers.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/indexes.surql
+surreal import -u root -p root --ns main --db main ./indexes.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/naive_cleaning.surql
+surreal import -u root -p root --ns main --db main ./naive_cleaning.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/person_schema.surql
+surreal import -u root -p root --ns main --db main ./person_schema.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/populate_person.surql
+surreal import -u root -p root --ns main --db main ./populate_person.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/users.surql
+surreal import -u root -p root --ns main --db main ./users.surql
 wait 1
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/user_record.surql
-wait 1
+surreal import -u root -p root --ns main --db main ./user_record.surql
+wait 
 
-surreal import -u root -p root --ns main --db main ~/Documents/vsc/surrealdb/movies_tut/user_permissions.surql
+surreal import -u root -p root --ns main --db main ./user_permissions.surql
