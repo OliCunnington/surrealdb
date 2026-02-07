@@ -96,34 +96,52 @@ use surrealdb::Surreal;
 use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::Ws;
 use surrealdb::engine::remote::ws::Client;
+// use surrealdb_types::{SurrealValue, Value};
 
 // Creates a new static instance of the client
 static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
 
-#[derive(Serialize, Deserialize)]
-struct Person {
-    name: String,
-}
+// #[derive(Serialize, Deserialize)]
+// struct Person {
+//     name: String,
+// }
 
 #[tokio::main]
 async fn main() -> surrealdb::Result<()> {
     // Connect to the database
     DB.connect::<Ws>("localhost:8000").await?;
 
+    tracing::info!("Database WebSocket connection initialized successfully");
+
     // Log into the database
     DB.signin(Root {
-        username: "root",
-        password: "root",
+        username: "root".to_string(),
+        password: "root".to_string(),
     }).await?;
 
+    tracing::info!("Database service_user signed in successfully");
+    
     // Select a namespace/database
     DB.use_ns("main").use_db("main").await?;
 
-    // Create or update a specific record
-    let tobie: Option<Person> = DB.update(("person_demo", "tobie"))
-        .content(Person {
-            name: "Tobie".into(),
-        }).await?;
+    // // Create or update a specific record
+    // let tobie: Option<Person> = DB.update(("person_demo", "tobie"))
+    //     .content(Person {
+    //         name: "Tobie".into(),
+    //     }).await?;
 
     Ok(())
 }
+
+// use surrealdb::Error;
+// use surrealdb::engine::remote::ws::Ws;
+// use surrealdb::Surreal;
+
+// #[tokio::main]
+// async fn main() -> Result<(), Error> {
+//     let db = Surreal::new::<Ws>("localhost:8000")
+//         .with_capacity(100_000)
+//         .await?;
+
+//     Ok(())
+// }
