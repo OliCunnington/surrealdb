@@ -1,17 +1,3 @@
-// // use std::borrow::Cow;
-// use serde::{Serialize, Deserialize};
-// // use serde_json::json;
-// use surrealdb::{
-//     engine::remote::ws::{Client, Ws}, 
-//     opt::auth::Root, 
-//     Surreal
-// };
-// use surrealdb::Error;
-// // use surrealdb::opt::auth::Root;
-// // use surrealdb::engine::remote::ws::Ws;
-// use std::sync::LazyLock;
-// use std::fmt;
-
 
 // #[derive(serde::Serialize, serde::Deserialize)]
 // struct Movie {
@@ -34,114 +20,100 @@
 //     poster: Option<String>,
 //     rated: Option<String>,
 //     average_rating: f32,
-
 // }
 
-// // Global database instance following the documentation pattern
-// static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
-
-// #[derive(Serialize, Deserialize)]
-// struct Person {
-//     name: String,
-//     roles: Vec<String>,
-//     created_by: Option<String>
-// }
-
-// impl fmt::Display for Person {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "{}, {}", self.name, self.roles.len().to_string())
-//     }
-// }
-
-// #[derive(Serialize, Deserialize)]
-// struct TestPerson {
-//     // id: String,
-//     name: String,
-// }
-
-// impl fmt::Display for TestPerson {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "{}", self.name)
-//     }
-// }
-
-// #[tokio::main]
-// async fn main() -> Result<(), Error> {
-//     DB.connect::<Ws>("localhost:8000").await?;
-
-//     tracing::info!("Database WebSocket connection initialized successfully");
-
-//     DB.signin(Root {
-//         username: "root".to_string(),
-//         password: "root".to_string(),
-//     }).await?;
-
-//     tracing::info!("Database service_user signed in successfully");
-    
-//     DB.use_ns("main").use_db("main").await?;
-
-//     let people : Vec<TestPerson> = DB.select("test_persons");
-
-//     for p in people {
-//         println!("{}", p);
-//     };
-
-//     Ok(())
-// }
-
-
-use std::sync::LazyLock;
+use std::fmt;
+use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
-use surrealdb::Surreal;
+use serde_json::json;
+use surrealdb::{Error, Surreal};
 use surrealdb::opt::auth::Root;
 use surrealdb::engine::remote::ws::Ws;
-use surrealdb::engine::remote::ws::Client;
-// use surrealdb_types::{SurrealValue, Value};
 
-// Creates a new static instance of the client
-static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
+#[derive(Serialize, Deserialize)]
+struct Person {
+    title: String,
+    name: Name,
+    marketing: bool,
+}
 
-// #[derive(Serialize, Deserialize)]
-// struct Person {
-//     name: String,
-// }
+impl fmt::Display for Person {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}\n({}, {})", self.name.first.as_ref(), self.name.last.as_ref(), self.title, self.marketing)
+    }
+}
+// Pro tip: Replace String with Cow<'static, str> to
+// avoid unnecessary heap allocations when inserting
 
+#[derive(Serialize, Deserialize)]
+struct Name {
+    first: Cow<'static, str>,
+    last: Cow<'static, str>,
+}
+
+// Install at https://surrealdb.com/install
+// and use `surreal start --user root --pass root`
+// to start a working database to take the following queries
+// See the results via `surreal sql --ns namespace --db database --pretty`
+// or https://surrealist.app/
+// followed by the query `SELECT * FROM person;`
 #[tokio::main]
-async fn main() -> surrealdb::Result<()> {
-    // Connect to the database
-    DB.connect::<Ws>("localhost:8000").await?;
+async fn main() -> Result<(), Error> {
+    let db = Surreal::new::<Ws>("localhost:8000").await?;
 
-    tracing::info!("Database WebSocket connection initialized successfully");
-
-    // Log into the database
-    DB.signin(Root {
-        username: "root".to_string(),
-        password: "root".to_string(),
+    // Signin as a namespace, database, or root user
+    db.signin(Root {
+        username: "root",
+        password: "root",
     }).await?;
 
-    tracing::info!("Database service_user signed in successfully");
-    
-    // Select a namespace/database
-    DB.use_ns("main").use_db("main").await?;
+    // Select a specific namespace / database
+    db.use_ns("main").use_db("main").await?;
 
-    // // Create or update a specific record
-    // let tobie: Option<Person> = DB.update(("person_demo", "tobie"))
-    //     .content(Person {
-    //         name: "Tobie".into(),
-    //     }).await?;
+    // Create a new person with a random ID
+    let created: Option<Person> = db.create("person")
+        .content(Person {
+            title: "Founder & CEO".into(),
+            name: Name {
+                first: "Tobie".into(),
+                last: "Morgan Hitchcock".into(),
+            },
+            marketing: true,
+        })
+        .await?;
+
+    // Create a new person with a specific ID
+    let created: Option<Person> = db.create(("person", "jaime"))
+        .content(Person {
+            title: "Founder & COO".into(),
+            name: Name {
+                first: "Jaime".into(),
+                last: "Morgan Hitchcock".into(),
+            },
+            marketing: false,
+        })
+        .await?;
+
+    // Update a person record with a specific ID
+    let updated: Option<Person> = db.update(("person", "jaime"))
+        .merge(json!({"marketing": true}))
+        .await?;
+
+    // Select all people records
+    let people: Vec<Person> = db.select("person").await?;
+    for p in people {
+        println!("{}", p);
+    }
+    // Perform a custom advanced query
+    let query = r#"
+        SELECT marketing, count()
+        FROM type::table($table)
+        GROUP BY marketing
+    "#;
+
+    let groups = db.query(query)
+        .bind(("table", "person"))
+        .await?;
 
     Ok(())
 }
-
-// use surrealdb::Error;
-// use surrealdb::engine::remote::ws::Ws;
-// use surrealdb::Surreal;
-
-// #[tokio::main]
-// async fn main() -> Result<(), Error> {
-//     let db = Surreal::new::<Ws>("localhost:8000")
-//         .with_capacity(100_000)
-//         .await?;
-
-//     Ok(())
-// }

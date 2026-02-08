@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-surrealdb = "3.0.0-beta.3"
-surrealdb-types = { version = "3.0.0-beta.3" }
-surrealdb-types-derive = { version = "3.0.0-beta.3" }
+surrealdb = { version = "2.5.0", features = ["protocol-ws"] }
 tokio = { version = "1.49.0", features = ["full"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
